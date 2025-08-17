@@ -1,27 +1,41 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 )
 
 func main() {
-	buffer := make([]byte, 8)
 	file, err := os.Open("messages.txt")
-	defer file.Close()
-
 	if err != nil {
 		fmt.Println("Error reading message file", err)
 		os.Exit(1)
 	}
+	defer file.Close()
 
+	dataString := ""
 	for {
-		bytes, err := file.Read(buffer)
+		buffer := make([]byte, 8)
+		n, err := file.Read(buffer)
 		if err != nil {
-			os.Exit(0)
+			break
 		}
-		if bytes > 0 {
-			fmt.Println("read:", string(buffer[:bytes]))
+
+		buffer = buffer[:n]
+
+		if i := bytes.IndexByte(buffer, '\n'); i != -1 {
+			dataString += string(buffer[:i])
+			fmt.Printf("read: %s\n", dataString)
+			buffer = buffer[i+1:]
+			dataString = ""
 		}
+
+		dataString += string(buffer)
 	}
+
+	if len(dataString) > 0 {
+		fmt.Printf("read: %s\n", dataString)
+	}
+
 }
