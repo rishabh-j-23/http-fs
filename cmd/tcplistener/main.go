@@ -1,47 +1,14 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"log/slog"
 	"net"
+
+	"github.com/rishabh/http-fs/internal/request"
 )
 
 const PORT = ":42069"
-
-func getLinesChannel(conn net.Conn) <-chan string {
-	linesChannel := make(chan string, 1)
-
-	go func() {
-		defer close(linesChannel)
-		defer conn.Close()
-		dataString := ""
-		for {
-			buffer := make([]byte, 8)
-			n, err := conn.Read(buffer)
-			if err != nil {
-				break
-			}
-
-			buffer = buffer[:n]
-
-			if i := bytes.IndexByte(buffer, '\n'); i != -1 {
-				dataString += string(buffer[:i])
-				linesChannel <- dataString
-				buffer = buffer[i+1:]
-				dataString = ""
-			}
-
-			dataString += string(buffer)
-		}
-
-		if len(dataString) > 0 {
-			linesChannel <- dataString
-		}
-	}()
-
-	return linesChannel
-}
 
 func main() {
 
@@ -49,6 +16,7 @@ func main() {
 	if err != nil {
 		slog.Error("Error creating server on", PORT, err)
 	}
+	defer listener.Close()
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
@@ -58,10 +26,12 @@ func main() {
 		}
 		defer conn.Close()
 
-		lines := getLinesChannel(conn)
-		for line := range lines {
-			fmt.Println(line)
+		request, err := request.RequestFromReader(conn)
+		if err != nil {
+			fmt.Println("Error reading the request")
+			break
 		}
+		fmt.Printf("Request Line:\n- Method: %s\n- Target: %s\n- Version: %s\n", request.RequestLine.Method, request.RequestLine.RequestTarget, request.RequestLine.HttpVersion)
+
 	}
-	defer listener.Close()
 }
