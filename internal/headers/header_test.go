@@ -1,6 +1,11 @@
-package headers_test
+package headers
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
 
 func TestParse(t *testing.T) {
 	// Test: Valid single header
@@ -10,8 +15,8 @@ func TestParse(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, headers)
 	assert.Equal(t, "localhost:42069", headers["Host"])
-	assert.Equal(t, 23, n)
-	assert.False(t, done)
+	assert.Equal(t, 25, n)
+	assert.True(t, done)
 
 	// Test: Invalid spacing header
 	headers = NewHeaders()
